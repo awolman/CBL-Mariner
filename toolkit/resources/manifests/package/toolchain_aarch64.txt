@@ -30,8 +30,8 @@ check-debuginfo-0.15.2-1.cm2.aarch64.rpm
 chkconfig-1.20-4.cm2.aarch64.rpm
 chkconfig-debuginfo-1.20-4.cm2.aarch64.rpm
 chkconfig-lang-1.20-4.cm2.aarch64.rpm
-cmake-3.21.4-9.cm2.aarch64.rpm
-cmake-debuginfo-3.21.4-9.cm2.aarch64.rpm
+cmake-3.21.4-10.cm2.aarch64.rpm
+cmake-debuginfo-3.21.4-10.cm2.aarch64.rpm
 coreutils-8.32-7.cm2.aarch64.rpm
 coreutils-debuginfo-8.32-7.cm2.aarch64.rpm
 coreutils-lang-8.32-7.cm2.aarch64.rpm
@@ -89,8 +89,8 @@ findutils-lang-4.8.0-5.cm2.aarch64.rpm
 flex-2.6.4-7.cm2.aarch64.rpm
 flex-debuginfo-2.6.4-7.cm2.aarch64.rpm
 flex-devel-2.6.4-7.cm2.aarch64.rpm
-gawk-5.1.0-2.cm2.aarch64.rpm
-gawk-debuginfo-5.1.0-2.cm2.aarch64.rpm
+gawk-5.1.1-1.cm2.aarch64.rpm
+gawk-debuginfo-5.1.1-1.cm2.aarch64.rpm
 gcc-11.2.0-6.cm2.aarch64.rpm
 gcc-c++-11.2.0-6.cm2.aarch64.rpm
 gcc-debuginfo-11.2.0-6.cm2.aarch64.rpm
@@ -259,9 +259,9 @@ newt-0.52.21-5.cm2.aarch64.rpm
 newt-debuginfo-0.52.21-5.cm2.aarch64.rpm
 newt-devel-0.52.21-5.cm2.aarch64.rpm
 newt-lang-0.52.21-5.cm2.aarch64.rpm
-nghttp2-1.46.0-3.cm2.aarch64.rpm
-nghttp2-debuginfo-1.46.0-3.cm2.aarch64.rpm
-nghttp2-devel-1.46.0-3.cm2.aarch64.rpm
+nghttp2-1.57.0-1.cm2.aarch64.rpm
+nghttp2-debuginfo-1.57.0-1.cm2.aarch64.rpm
+nghttp2-devel-1.57.0-1.cm2.aarch64.rpm
 ninja-build-1.10.2-2.cm2.aarch64.rpm
 ninja-build-debuginfo-1.10.2-2.cm2.aarch64.rpm
 npth-1.6-4.cm2.aarch64.rpm
@@ -584,9 +584,9 @@ xz-lang-5.2.5-1.cm2.aarch64.rpm
 xz-libs-5.2.5-1.cm2.aarch64.rpm
 zip-3.0-5.cm2.aarch64.rpm
 zip-debuginfo-3.0-5.cm2.aarch64.rpm
-zlib-1.2.13-1.cm2.aarch64.rpm
-zlib-debuginfo-1.2.13-1.cm2.aarch64.rpm
-zlib-devel-1.2.13-1.cm2.aarch64.rpm
+zlib-1.2.13-2.cm2.aarch64.rpm
+zlib-debuginfo-1.2.13-2.cm2.aarch64.rpm
+zlib-devel-1.2.13-2.cm2.aarch64.rpm
 zstd-1.5.0-1.cm2.aarch64.rpm
 zstd-debuginfo-1.5.0-1.cm2.aarch64.rpm
 zstd-devel-1.5.0-1.cm2.aarch64.rpm
