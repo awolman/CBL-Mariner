@@ -8,7 +8,6 @@ Distribution:  Mariner
 Group:         Development/Tools
 URL:           git://git.kernel.org/pub/scm/utils/rt-tests/rt-tests.git
 Source0:       https://www.kernel.org/pub/linux/utils/rt-tests/older/%{name}-%{version}.tar.xz
-ExclusiveArch: x86_64
 Requires:      bash
 Requires:      bc
 Requires:      python3
@@ -28,6 +27,7 @@ Patch11:       pi_stress-limit-the-number-of-inversion-groups-to-th.patch
 Patch12:       rt-tests-cyclictest-Move-ftrace-helpers-into-rt-util.patch
 Patch13:       rt-tests-oslat-Init-commit.patch
 Patch14:       rt-tests-oslat-Proper-reformat-of-code.patch
+Patch15:       rt-tests-oslat-aarch64-frc.patch
 
 %description
 rt-tests is a set of programs that test and measure various components of
@@ -50,6 +50,7 @@ latency. It also tests the functioning of priority-inheritance mutexes.
 %patch12 -p1
 %patch13 -p1
 %patch14 -p1
+%patch15 -p1
 
 %build
 make %{?_smp_mflags} NUMA=1 HAVE_PARSE_CPUSTRING_ALL=1
