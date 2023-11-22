@@ -30,7 +30,7 @@
 Summary:        Linux Kernel
 Name:           kernel
 Version:        6.1.54.1
-Release:        1%{?dist}
+Release:        3%{?dist}
 License:        GPLv2
 Vendor:         Microsoft Corporation
 Distribution:   Mariner
@@ -68,9 +68,7 @@ BuildRequires:  pam-devel
 BuildRequires:  procps-ng-devel
 BuildRequires:  python3-devel
 BuildRequires:  sed
-%ifarch x86_64
 BuildRequires:  pciutils-devel
-%endif
 Requires:       filesystem
 Requires:       kmod
 Requires(post): coreutils
@@ -207,6 +205,10 @@ make -C tools/perf PYTHON=%{python3} all
 make -C tools turbostat cpupower
 %endif
 
+%ifarch aarch64
+make -C tools cpupower
+%endif
+
 #Compile bpftool
 make -C tools/bpf/bpftool
 
@@ -317,6 +319,10 @@ install -vsm 755 tools/bpf/resolve_btfids/resolve_btfids %{buildroot}%{_prefix}/
 make -C tools DESTDIR=%{buildroot} prefix=%{_prefix} bash_compdir=%{_sysconfdir}/bash_completion.d/ mandir=%{_mandir} turbostat_install cpupower_install
 %endif
 
+%ifarch aarch64
+make -C tools DESTDIR=%{buildroot} prefix=%{_prefix} bash_compdir=%{_sysconfdir}/bash_completion.d/ mandir=%{_mandir} cpupower_install
+%endif
+
 # Remove trace (symlink to perf). This file causes duplicate identical debug symbols
 rm -vf %{buildroot}%{_bindir}/trace
 
@@ -413,8 +419,16 @@ ln -sf linux-%{uname_r}.cfg /boot/mariner.cfg
 %{_datadir}/bash-completion/completions/cpupower
 %endif
 %ifarch aarch64
+%{_sbindir}/cpufreq-bench
 %{_libdir}/traceevent
 %{_libdir}/libperf-jvmti.so
+%{_lib64dir}/libcpupower.so*
+%{_sysconfdir}/cpufreq-bench.conf
+%{_includedir}/cpuidle.h
+%{_includedir}/cpufreq.h
+%{_mandir}/man1/cpupower*.gz
+%{_datadir}/locale/*/LC_MESSAGES/cpupower.mo
+%{_datadir}/bash-completion/completions/cpupower
 %endif
 %{_bindir}
 %{_sysconfdir}/bash_completion.d/*
