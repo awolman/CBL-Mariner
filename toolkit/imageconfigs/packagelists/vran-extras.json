@@ -1,0 +1,12 @@
+{
+    "packages": [
+        "bcc-devel",
+        "bcc-tools",
+        "bpftrace",
+        "diffutils",
+        "emacs",
+        "python3-pip",
+        "python3-setuptools",
+        "usbutils"
+    ]
+}

@@ -20,8 +20,10 @@
         {
             "Name": "CBL-Mariner Core",
             "PackageLists": [
-                "packagelists/hyperv-packages.json",
-                "packagelists/core-packages-image-aarch64.json"
+                "packagelists/core-packages-image-aarch64.json",
+                "packagelists/rt-packages.json",
+                "packagelists/ssh-server.json",
+                "packagelists/vran-extras.json"
             ],
             "KernelOptions": {
                 "default": "kernel"
