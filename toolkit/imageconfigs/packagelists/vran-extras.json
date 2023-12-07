@@ -5,8 +5,18 @@
         "bpftrace",
         "diffutils",
         "emacs",
+        "helm",
+        "jq",
+        "kubernetes",
+        "kubernetes-client",
+        "kubernetes-kubeadm",
+        "linuxptp",
+        "moby-containerd",
+        "moby-engine",
+        "PyYAML",
         "python3-pip",
         "python3-setuptools",
+        "socat",
         "usbutils"
     ]
 }
