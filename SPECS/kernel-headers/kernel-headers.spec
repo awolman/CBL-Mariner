@@ -17,13 +17,13 @@ BuildArch:      noarch
 The Linux API Headers expose the kernel's API for use by Glibc.
 
 %prep
-%setup -q -n CBL-Mariner-Linux-Kernel-rolling-lts-mariner-2-%{version}
+%setup -q -n CBL-Mariner-Linux-Kernel-rolling-lts-mariner-3-%{version}
 
 %build
 make mrproper
 
 %install
-cd %{_builddir}/CBL-Mariner-Linux-Kernel-rolling-lts-mariner-2-%{version}
+cd %{_builddir}/CBL-Mariner-Linux-Kernel-rolling-lts-mariner-3-%{version}
 make headers
 find usr/include -name '.*' -delete
 rm usr/include/Makefile
