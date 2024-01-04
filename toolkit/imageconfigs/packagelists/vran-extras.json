@@ -24,6 +24,8 @@
         "kubernetes-kubeadm",
         "less",
         "linuxptp",
+        "lksctp-tools",
+        "lksctp-tools-devel",        
         "llvm-devel",
         "m4",
         "moby-containerd",

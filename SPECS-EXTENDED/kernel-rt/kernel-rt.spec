@@ -30,7 +30,7 @@
 Summary:        Linux Kernel
 Name:           kernel
 Version:        6.1.54.1
-Release:        6%{?dist}
+Release:        7%{?dist}
 License:        GPLv2
 Vendor:         Microsoft Corporation
 Distribution:   Mariner
@@ -420,7 +420,6 @@ ln -sf linux-%{uname_r}.cfg /boot/mariner.cfg
 %endif
 %ifarch aarch64
 %{_sbindir}/cpufreq-bench
-%{_libdir}/traceevent
 %{_libdir}/libperf-jvmti.so
 %{_lib64dir}/libcpupower.so*
 %{_sysconfdir}/cpufreq-bench.conf
