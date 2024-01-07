@@ -46,6 +46,7 @@ Source4:        cbl-mariner-ca-20211013.pem
 # Also, remember to bump the global rt_version macro above ^
 Patch0:         patch-%{version_upstream}-%{rt_version}.patch
 Patch1:         nvme_multipath_default_false.patch
+Patch2:         disable_install_libtraceevent_plugins.patch
 BuildRequires:  audit-devel
 BuildRequires:  bash
 BuildRequires:  bc
@@ -167,6 +168,7 @@ manipulation of eBPF programs and maps.
 %setup -q -n CBL-Mariner-Linux-Kernel-rolling-lts-mariner-3-%{version}
 %patch0 -p1
 %patch1 -p1
+%patch2 -p1
 
 make mrproper
 

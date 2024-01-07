@@ -1,0 +1,13 @@
+--- a/tools/lib/traceevent/plugins/Makefile	2023-09-25 07:06:30.000000000 -0700
++++ b/tools/lib/traceevent/plugins/Makefile	2024-01-06 18:28:48.536559186 -0800
+@@ -208,8 +208,8 @@
+ endef
+ 
+ install: $(PLUGINS)
+-	$(call QUIET_INSTALL, trace_plugins) \
+-	$(call do_install_plugins, $(PLUGINS))
++	# $(call QUIET_INSTALL, trace_plugins) \
++	# $(call do_install_plugins, $(PLUGINS))
+ 
+ clean:
+ 	$(call QUIET_CLEAN, trace_plugins) \
