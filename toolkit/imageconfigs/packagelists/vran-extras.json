@@ -23,6 +23,8 @@
         "kubernetes-client",
         "kubernetes-kubeadm",
         "less",
+        "libtraceevent",
+        "libtracefs",
         "linuxptp",
         "lksctp-tools",
         "lksctp-tools-devel",        
