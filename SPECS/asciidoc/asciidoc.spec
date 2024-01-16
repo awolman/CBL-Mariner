@@ -1,7 +1,7 @@
 Summary:        AsciiDoc is a human readable text document format
 Name:           asciidoc
 Version:        9.1.0
-Release:        1%{?dist}
+Release:        2%{?dist}
 License:        GPLv2
 URL:            https://asciidoc.org/
 Group:          System Environment/Development
@@ -14,11 +14,13 @@ BuildRequires:  python3-xml
 BuildRequires:  libxslt
 BuildRequires:  docbook-style-xsl
 BuildRequires:  docbook-dtd-xml
+BuildRequires:  source-highlight
 Requires:       python3
 Requires:       python3-xml
 Requires:       libxslt
 Requires:       docbook-style-xsl
 Requires:       docbook-dtd-xml
+Requires:       source-highlight
 
 %description
 AsciiDoc is a human readable text document format that can be easily converted to other document formats.
