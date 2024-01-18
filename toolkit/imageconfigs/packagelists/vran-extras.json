@@ -36,6 +36,7 @@
         "lksctp-tools-devel",
         "llvm-devel",
         "m4",
+        "man-db",
         "moby-containerd",
         "moby-engine",
         "ncurses-devel",
