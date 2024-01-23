@@ -37,6 +37,7 @@
         "llvm-devel",
         "m4",
         "man-db",
+        "man-pages",
         "moby-containerd",
         "moby-engine",
         "ncurses-devel",
