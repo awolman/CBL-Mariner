@@ -72,6 +72,7 @@ make %{?_smp_mflags} DESTDIR=%{buildroot} prefix=%{_prefix} install
 /usr/share/man/man8/ssdd.8.gz
 /usr/share/man/man8/oslat.8.gz
 /usr/share/man/man8/get_cyclictest_snapshot.8.gz
+/usr/share/man/man8/determine_maximum_mpps.8.gz
 
 %changelog
 * Thu Jan 20 2022 Cameron Baird <cameronbaird@microsoft.com> 1.8-13
