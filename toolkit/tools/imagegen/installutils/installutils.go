@@ -387,7 +387,8 @@ func PopulateInstallRoot(installChroot *safechroot.Chroot, packagesToInstall []s
 	defer timestamp.StopEvent(nil)
 
 	const (
-		filesystemPkg = "filesystem"
+		filesystemPkg  = "filesystem"
+		shadowUtilsPkg = "shadow-utils"
 	)
 
 	defer stopGPGAgent(installChroot)
@@ -439,6 +440,14 @@ func PopulateInstallRoot(installChroot *safechroot.Chroot, packagesToInstall []s
 	if err != nil {
 		return
 	}
+	if len(config.Users) > 0 || len(config.Groups) > 0 {
+		shadowUtilsInstalled := 0
+		shadowUtilsInstalled, err = TdnfInstallWithProgress(shadowUtilsPkg, installRoot, packagesInstalled, totalPackages, true)
+		if err != nil {
+			return
+		}
+		packagesInstalled += shadowUtilsInstalled
+	}
 
 	hostname := config.Hostname
 	if !isRootFS && mountPointToFsTypeMap[rootMountPoint] != overlay {
@@ -447,6 +456,18 @@ func PopulateInstallRoot(installChroot *safechroot.Chroot, packagesToInstall []s
 		if err != nil {
 			return
 		}
+	}
+
+	// Add groups
+	err = addGroups(installChroot, config.Groups)
+	if err != nil {
+		return
+	}
+
+	// Add users
+	err = addUsers(installChroot, config.Users)
+	if err != nil {
+		return
 	}
 
 	// Install packages one-by-one to avoid exhausting memory
@@ -473,18 +494,6 @@ func PopulateInstallRoot(installChroot *safechroot.Chroot, packagesToInstall []s
 		if err != nil {
 			return
 		}
-
-		// Add groups
-		err = addGroups(installChroot, config.Groups)
-		if err != nil {
-			return
-		}
-	}
-
-	// Add users
-	err = addUsers(installChroot, config.Users)
-	if err != nil {
-		return
 	}
 
 	// Add machine-id
@@ -947,6 +956,92 @@ func addEntryToCrypttab(installRoot string, devicePath string, encryptedRoot dis
 	return
 }
 
+func ConfigureDiskBootloader(bootType string, encryptionEnable bool, readOnlyVerityRootEnable bool,
+	partitionSettings []configuration.PartitionSetting, kernelCommandLine configuration.KernelCommandLine,
+	installChroot *safechroot.Chroot, diskDevPath string, installMap map[string]string,
+	encryptedRoot diskutils.EncryptedRootDevice, readOnlyRoot diskutils.VerityDevice,
+) (err error) {
+	timestamp.StartEvent("configuring bootloader", nil)
+	defer timestamp.StopEvent(nil)
+
+	const rootMountPoint = "/"
+	const bootMountPoint = "/boot"
+
+	var rootDevice string
+
+	// Add bootloader. Prefer a separate boot partition if one exists.
+	bootDevice, isBootPartitionSeparate := installMap[bootMountPoint]
+	bootPrefix := ""
+	if !isBootPartitionSeparate {
+		bootDevice = installMap[rootMountPoint]
+		// If we do not have a separate boot partition we will need to add a prefix to all paths used in the configs.
+		bootPrefix = "/boot"
+	}
+
+	if installMap[rootMountPoint] == NullDevice {
+		// In case of overlay device being mounted at root, no need to change the bootloader.
+		return
+	}
+
+	// Grub only accepts UUID, not PARTUUID or PARTLABEL
+	bootUUID, err := GetUUID(bootDevice)
+	if err != nil {
+		err = fmt.Errorf("failed to get UUID: %s", err)
+		return
+	}
+
+	err = InstallBootloader(installChroot, encryptionEnable, bootType, bootUUID, bootPrefix, diskDevPath)
+	if err != nil {
+		err = fmt.Errorf("failed to install bootloader: %s", err)
+		return
+	}
+
+	// Add grub config to image
+	rootPartitionSetting := configuration.FindRootPartitionSetting(partitionSettings)
+	if rootPartitionSetting == nil {
+		err = fmt.Errorf("failed to find partition setting for root mountpoint")
+		return
+	}
+	rootMountIdentifier := rootPartitionSetting.MountIdentifier
+	if encryptionEnable {
+		// Encrypted devices don't currently support identifiers
+		rootDevice = installMap[rootMountPoint]
+	} else if readOnlyVerityRootEnable {
+		var partIdentifier string
+		partIdentifier, err = FormatMountIdentifier(rootMountIdentifier, readOnlyRoot.BackingDevice)
+		if err != nil {
+			err = fmt.Errorf("failed to get partIdentifier: %s", err)
+			return
+		}
+		rootDevice = fmt.Sprintf("verityroot:%v", partIdentifier)
+	} else {
+		var partIdentifier string
+		partIdentifier, err = FormatMountIdentifier(rootMountIdentifier, installMap[rootMountPoint])
+		if err != nil {
+			err = fmt.Errorf("failed to get partIdentifier: %s", err)
+			return
+		}
+
+		rootDevice = partIdentifier
+	}
+
+	// Grub will always use filesystem UUID, never PARTUUID or PARTLABEL
+	err = InstallGrubCfg(installChroot.RootDir(), rootDevice, bootUUID, bootPrefix, encryptedRoot,
+		kernelCommandLine, readOnlyRoot, isBootPartitionSeparate)
+	if err != nil {
+		err = fmt.Errorf("failed to install main grub config file: %s", err)
+		return
+	}
+
+	err = InstallGrubEnv(installChroot.RootDir())
+	if err != nil {
+		err = fmt.Errorf("failed to install grubenv file: %s", err)
+		return
+	}
+
+	return
+}
+
 // InstallGrubEnv installs an empty grubenv f
 func InstallGrubEnv(installRoot string) (err error) {
 	const (
@@ -1156,7 +1251,7 @@ func addUsers(installChroot *safechroot.Chroot, users []configuration.User) (err
 			return
 		}
 
-		err = ProvisionUserSSHCerts(installChroot, user.Name, user.SSHPubKeyPaths)
+		err = ProvisionUserSSHCerts(installChroot, user.Name, user.SSHPubKeyPaths, user.SSHPubKeys)
 		if err != nil {
 			return
 		}
@@ -1250,7 +1345,7 @@ func createUserWithPassword(installChroot *safechroot.Chroot, user configuration
 
 // chage works in the same way as invoking "chage -M passwordExpirationInDays username"
 // i.e. it sets the maximum password expiration date.
-func Chage(installChroot *safechroot.Chroot, passwordExpirationInDays int64, username string) (err error) {
+func Chage(installChroot safechroot.ChrootInterface, passwordExpirationInDays int64, username string) (err error) {
 	var (
 		shadow            []string
 		usernameWithColon = fmt.Sprintf("%s:", username)
@@ -1336,7 +1431,7 @@ func Chage(installChroot *safechroot.Chroot, passwordExpirationInDays int64, use
 	return fmt.Errorf(`user "%s" not found when trying to change the password expiration date`, username)
 }
 
-func ConfigureUserGroupMembership(installChroot *safechroot.Chroot, username string, primaryGroup string,
+func ConfigureUserGroupMembership(installChroot safechroot.ChrootInterface, username string, primaryGroup string,
 	secondaryGroups []string,
 ) (err error) {
 	const squashErrors = false
@@ -1367,7 +1462,7 @@ func ConfigureUserGroupMembership(installChroot *safechroot.Chroot, username str
 	return
 }
 
-func ConfigureUserStartupCommand(installChroot *safechroot.Chroot, username string, startupCommand string) (err error) {
+func ConfigureUserStartupCommand(installChroot safechroot.ChrootInterface, username string, startupCommand string) (err error) {
 	const (
 		passwdFilePath = "etc/passwd"
 		sedDelimiter   = "|"
@@ -1391,7 +1486,7 @@ func ConfigureUserStartupCommand(installChroot *safechroot.Chroot, username stri
 	return
 }
 
-func ProvisionUserSSHCerts(installChroot *safechroot.Chroot, username string, sshPubKeyPaths []string) (err error) {
+func ProvisionUserSSHCerts(installChroot safechroot.ChrootInterface, username string, sshPubKeyPaths []string, sshPubKeys []string) (err error) {
 	var (
 		pubKeyData []string
 		exists     bool
@@ -1403,7 +1498,7 @@ func ProvisionUserSSHCerts(installChroot *safechroot.Chroot, username string, ss
 
 	// Skip user SSH directory generation when not provided with public keys
 	// Let SSH handle the creation of this folder on its first use
-	if len(sshPubKeyPaths) == 0 {
+	if len(sshPubKeyPaths) == 0 && len(sshPubKeys) == 0 {
 		return
 	}
 
@@ -1432,8 +1527,10 @@ func ProvisionUserSSHCerts(installChroot *safechroot.Chroot, username string, ss
 	}
 	defer os.Remove(authorizedKeysTempFile)
 
+	allSSHKeys := make([]string, 0, len(sshPubKeyPaths)+len(sshPubKeys))
+
+	// Add SSH keys from sshPubKeyPaths
 	for _, pubKey := range sshPubKeyPaths {
-		logger.Log.Infof("Adding ssh key (%s) to user (%s)", filepath.Base(pubKey), username)
 		relativeDst := filepath.Join(userSSHKeyDir, filepath.Base(pubKey))
 
 		fileToCopy := safechroot.FileToCopy{
@@ -1446,21 +1543,26 @@ func ProvisionUserSSHCerts(installChroot *safechroot.Chroot, username string, ss
 			return
 		}
 
-		logger.Log.Infof("Adding ssh key (%s) to user (%s) .ssh/authorized_users", filepath.Base(pubKey), username)
 		pubKeyData, err = file.ReadLines(pubKey)
 		if err != nil {
 			logger.Log.Warnf("Failed to read from SSHPubKey : %v", err)
 			return
 		}
 
-		// Append to the tmp/authorized_users file
-		for _, sshkey := range pubKeyData {
-			sshkey += "\n"
-			err = file.Append(sshkey, authorizedKeysTempFile)
-			if err != nil {
-				logger.Log.Warnf("Failed to append to %s : %v", authorizedKeysTempFile, err)
-				return
-			}
+		allSSHKeys = append(allSSHKeys, pubKeyData...)
+	}
+
+	// Add direct SSH keys
+	allSSHKeys = append(allSSHKeys, sshPubKeys...)
+
+	for _, pubKey := range allSSHKeys {
+		logger.Log.Infof("Adding ssh key (%s) to user (%s) .ssh/authorized_users", filepath.Base(pubKey), username)
+		pubKey += "\n"
+
+		err = file.Append(pubKey, authorizedKeysTempFile)
+		if err != nil {
+			logger.Log.Warnf("Failed to append to %s : %v", authorizedKeysTempFile, err)
+			return
 		}
 	}
 
@@ -1504,7 +1606,7 @@ func ProvisionUserSSHCerts(installChroot *safechroot.Chroot, username string, ss
 }
 
 // SELinuxConfigure pre-configures SELinux file labels and configuration files
-func SELinuxConfigure(systemConfig configuration.SystemConfig, installChroot *safechroot.Chroot, mountPointToFsTypeMap map[string]string) (err error) {
+func SELinuxConfigure(systemConfig configuration.SystemConfig, installChroot *safechroot.Chroot, mountPointToFsTypeMap map[string]string, isRootFS bool) (err error) {
 	timestamp.StartEvent("SELinux", nil)
 	defer timestamp.StopEvent(nil)
 	logger.Log.Infof("Preconfiguring SELinux policy in %s mode", systemConfig.KernelCommandLine.SELinux)
@@ -1514,7 +1616,7 @@ func SELinuxConfigure(systemConfig configuration.SystemConfig, installChroot *sa
 		logger.Log.Errorf("Failed to update SELinux config")
 		return
 	}
-	err = selinuxRelabelFiles(systemConfig, installChroot, mountPointToFsTypeMap)
+	err = selinuxRelabelFiles(systemConfig, installChroot, mountPointToFsTypeMap, isRootFS)
 	if err != nil {
 		logger.Log.Errorf("Failed to label SELinux files")
 		return
@@ -1542,7 +1644,7 @@ func selinuxUpdateConfig(systemConfig configuration.SystemConfig, installChroot 
 	return
 }
 
-func selinuxRelabelFiles(systemConfig configuration.SystemConfig, installChroot *safechroot.Chroot, mountPointToFsTypeMap map[string]string) (err error) {
+func selinuxRelabelFiles(systemConfig configuration.SystemConfig, installChroot *safechroot.Chroot, mountPointToFsTypeMap map[string]string, isRootFS bool) (err error) {
 	const (
 		squashErrors        = false
 		configFile          = "etc/selinux/config"
@@ -1550,18 +1652,22 @@ func selinuxRelabelFiles(systemConfig configuration.SystemConfig, installChroot 
 	)
 	var listOfMountsToLabel []string
 
-	// Search through all our mount points for supported filesystem types
-	// Note for the future: SELinux can support any of {btrfs, encfs, ext2-4, f2fs, jffs2, jfs, ubifs, xfs, zfs}, but the build system currently
-	//     only supports the below cases:
-	for mount, fsType := range mountPointToFsTypeMap {
-		switch fsType {
-		case "ext2", "ext3", "ext4", "xfs":
-			listOfMountsToLabel = append(listOfMountsToLabel, mount)
-		case "fat32", "fat16", "vfat":
-			logger.Log.Debugf("SELinux will not label mount at (%s) of type (%s), skipping", mount, fsType)
-		default:
-			err = fmt.Errorf("unknown fsType (%s) for mount (%s), cannot configure SELinux", fsType, mount)
-			return
+	if isRootFS {
+		listOfMountsToLabel = append(listOfMountsToLabel, "/")
+	} else {
+		// Search through all our mount points for supported filesystem types
+		// Note for the future: SELinux can support any of {btrfs, encfs, ext2-4, f2fs, jffs2, jfs, ubifs, xfs, zfs}, but the build system currently
+		//     only supports the below cases:
+		for mount, fsType := range mountPointToFsTypeMap {
+			switch fsType {
+			case "ext2", "ext3", "ext4", "xfs":
+				listOfMountsToLabel = append(listOfMountsToLabel, mount)
+			case "fat32", "fat16", "vfat":
+				logger.Log.Debugf("SELinux will not label mount at (%s) of type (%s), skipping", mount, fsType)
+			default:
+				err = fmt.Errorf("unknown fsType (%s) for mount (%s), cannot configure SELinux", fsType, mount)
+				return
+			}
 		}
 	}
 
