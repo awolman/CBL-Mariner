@@ -1,0 +1,32 @@
+--- a/phc2sys.c	2024-02-02 12:36:44.023059269 -0800
++++ b/phc2sys.c	2024-02-05 12:19:21.618316134 -0800
+@@ -1978,6 +1978,8 @@
+ 	struct pmc_agent *node = NULL;
+ 	unsigned int i, src_cnt = 0;
+ 	int ha_enabled = 0;
++	char *temp_devname = NULL;
++	size_t device_len = 0, prefix_len = 0;
+ 
+ 	handle_term_signals();
+ 
+@@ -2301,9 +2303,19 @@
+ 			if (src->state == PS_MASTER)
+ 				continue;
+ 
++			/* remove prefix /dev/ from device name if needed */
++			prefix_len = strlen("/dev/");
++			if (strncmp(src->device, "/dev/", prefix_len) == 0) {
++				device_len = strlen(src->device) - prefix_len + 1;
++				temp_devname = calloc(device_len, 1);
++				strncpy(temp_devname, src->device + prefix_len, device_len);
++			} else {
++				temp_devname = src->device;
++			}
++
+ 			/* uds local is formated '/var/run/phc2sys.<pid>.<source_interface>' */
+ 			snprintf(uds_local, sizeof(uds_local), "/var/run/phc2sys.%d.%s",
+-				getpid(), src->device);
++				getpid(), temp_devname);
+ 
+ 			if (init_pmc_node(cfg, src->node, uds_local,
+ 					phc2sys_recv_subscribed, &priv))

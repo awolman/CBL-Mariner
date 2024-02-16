@@ -6,7 +6,7 @@ Distribution:   Mariner
 
 Name:		linuxptp
 Version:	3.1.1
-Release:	1%{?dist}
+Release:	2%{?dist}
 Summary:	PTP implementation for Linux
 
 License:	GPLv2+
@@ -31,6 +31,7 @@ Patch1:		clknetsim-phc2sys.patch
 # The following patch is a combination of multiple patches to enable HA in linuxptp
 # https://review.opendev.org/c/starlingx/integ/+/891638
 Patch2:         enable-ha.patch
+Patch3:         phc2sys-devname.patch
 
 BuildRequires:	gcc gcc-c++ make systemd
 
@@ -54,6 +55,7 @@ pushd testsuite/clknetsim
 popd
 
 %patch2 -p1 -b .pre-ha
+%patch3 -p1 -b .devname
 
 %build
 %{make_build} \
