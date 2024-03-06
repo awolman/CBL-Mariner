@@ -52,6 +52,7 @@
         "socat",
         "source-highlight",
         "strace",
+        "tcpdump",
         "trace-cmd",
         "trace-cmd-python3",
         "unzip",
